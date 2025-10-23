@@ -1,33 +1,51 @@
-<!-- templates/accounts/register.html -->
 {% extends 'base.html' %}
 {% block title %}Cadastro (PCD){% endblock %}
+
 {% block content %}
-<h2>Cadastro para Pessoa com Deficiência (PCD)</h2>
+<div class="d-flex flex-column h-100">
+  <h4 class="text-center mb-2">Cadastro para PCD</h4>
 
-<!-- Exibir erros não relacionados a campos específicos -->
-{% if form.non_field_errors %}
-    <div style="color: red; margin-bottom: 1rem;">
-        {% for error in form.non_field_errors %}
-            <p>{{ error }}</p>
-        {% endfor %}
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger small p-2 mb-2">
+      {% for error in form.non_field_errors %}
+        {{ error }}
+      {% endfor %}
     </div>
-{% endif %}
+  {% endif %}
 
-<form method="post">
+  <form method="post" class="mt-auto">
     {% csrf_token %}
     {% for field in form %}
-        <div>
-            {{ field.label_tag }}
-            {{ field }}
-            {% if field.help_text %}
-                <small class="helptext">{{ field.help_text }}</small>
-            {% endif %}
-            {% for error in field.errors %}
-                <p style="color:red;">{{ error }}</p>
-            {% endfor %}
+      {% if field.name != 'lgpd_consent' %}
+        <div class="mb-2">
+          <label class="form-label small">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}
+            <small class="form-text text-muted">{{ field.help_text }}</small>
+          {% endif %}
+          {% for error in field.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
         </div>
+      {% endif %}
     {% endfor %}
-    <button type="submit">Cadastrar</button>
-</form>
-<a href="{% url 'login' %}">Já tenho conta</a>
+
+    <!-- LGPD separado para layout limpo -->
+    <div class="form-check mb-3 mt-2">
+      {{ form.lgpd_consent }}
+      <label class="form-check-label small">
+        Li e aceito o tratamento dos meus dados conforme a <strong>LGPD</strong>
+      </label>
+    </div>
+
+    <button type="submit" class="btn btn-success w-100">Cadastrar</button>
+  </form>
+
+  <div class="d-grid gap-2">
+    <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm">⬅ Voltar ao Início</a>
+    <div class="text-center small">
+      <a href="{% url 'login' %}" class="text-decoration-none">Já tenho conta</a>
+    </div>
+  </div>
+</div>
 {% endblock %}

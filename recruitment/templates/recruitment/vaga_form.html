@@ -1,25 +1,33 @@
 <!-- templates/recruitment/vaga_form.html -->
 {% extends 'base.html' %}
 {% block title %}Nova Vaga{% endblock %}
-{% block content %}
-<h1>Criar nova vaga</h1>
-<p>Empresa: {{ empresa.nome }} (CNPJ {{ empresa.cnpj }})</p>
 
-<form method="post">
+{% block content %}
+<div class="d-flex flex-column h-100">
+  <h5 class="mb-2">Criar Nova Vaga</h5>
+  <p class="small text-muted mb-3">
+    Empresa: <strong>{{ empresa.nome }}</strong> (CNPJ {{ empresa.cnpj }})
+  </p>
+
+  <form method="post" class="mt-auto">
     {% csrf_token %}
-    <div>
-        <label for="titulo">Título</label>
-        <input type="text" id="titulo" name="titulo" required>
+    <div class="mb-2">
+      <label class="form-label small">Título *</label>
+      <input type="text" name="titulo" class="form-control form-control-sm" required>
     </div>
-    <div>
-        <label for="descricao">Descrição</label>
-        <textarea id="descricao" name="descricao" rows="6" required></textarea>
+    <div class="mb-2">
+      <label class="form-label small">Descrição *</label>
+      <textarea name="descricao" class="form-control form-control-sm" rows="4" required></textarea>
     </div>
-    <div>
-        <label for="requisitos">Requisitos</label>
-        <textarea id="requisitos" name="requisitos" rows="4" required></textarea>
+    <div class="mb-3">
+      <label class="form-label small">Requisitos *</label>
+      <textarea name="requisitos" class="form-control form-control-sm" rows="3" required></textarea>
     </div>
-    <button type="submit">Salvar vaga</button>
-    <a href="{% url 'recruiter_dashboard' %}">Cancelar</a>
-</form>
+
+    <div class="d-grid gap-2">
+      <button type="submit" class="btn btn-primary">Salvar vaga</button>
+      <a href="{% url 'recruiter_dashboard' %}" class="btn btn-outline-secondary">Cancelar / Voltar ao Dashboard</a>
+    </div>
+  </form>
+</div>
 {% endblock %}

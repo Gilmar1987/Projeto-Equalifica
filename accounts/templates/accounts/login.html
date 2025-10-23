@@ -1,19 +1,30 @@
-<!-- templates/accounts/login.html -->
 {% extends 'base.html' %}
 {% block title %}Login{% endblock %}
+
 {% block content %}
-<h2>Login</h2>
-<form method="post">
+<div class="d-flex flex-column h-100">
+  <div class="text-center mb-3">
+    <h3>Login</h3>
+  </div>
+
+  <form method="post" class="mt-auto">
     {% csrf_token %}
-    <div>
-        <label for="id_username">Email:</label>
-        <input type="email" name="username" id="id_username" required autofocus>
+    <div class="mb-2">
+      <input type="email" name="username" class="form-control form-control-sm" placeholder="Email" required autofocus>
     </div>
-    <div>
-        <label for="id_password">Senha:</label>
-        <input type="password" name="password" id="id_password" required>
+    <div class="mb-3">
+      <input type="password" name="password" class="form-control form-control-sm" placeholder="Senha" required>
     </div>
-    <button type="submit">Entrar</button>
-</form>
-<p>Ainda não tem conta? <a href="{% url 'register' %}">Cadastre-se como PCD</a></p>
+    <button type="submit" class="btn btn-primary w-100">Entrar</button>
+  </form>
+
+  <div class="mt-2 text-center small">
+    <a href="{% url 'register' %}">Cadastre-se como PCD</a>
+    <div class="d-grid gap-2">
+    <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm">⬅ Voltar ao Início</a>
+  </div>
+
+  </div>
+
+</div>
 {% endblock %}

@@ -1,52 +1,69 @@
-<!-- templates/recruiter/dashboard.html -->
 {% extends 'base.html' %}
 {% block title %}Dashboard - {{ empresa.nome }}{% endblock %}
+
 {% block content %}
-<h1>Dashboard da Empresa: {{ empresa.nome }}</h1>
+<div class="d-flex flex-column h-100">
+  <h5 class="mb-3">Dashboard da Empresa: <strong>{{ empresa.nome }}</strong></h5>
 
-<h3>Vagas Ativas ({{ vagas.count }})</h3>
-<p><a href="{% url 'vaga_create' %}" style="background-color: #007bff; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;">+ Criar Nova Vaga</a></p>
+  <!-- Vagas -->
+  <div class="mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">Vagas Ativas ({{ vagas.count }})</h6>
+      
 
-{% if vagas %}
-<ul>
-{% for vaga in vagas %}
-    <li>{{ vaga.titulo }} — Criada em {{ vaga.created_at|date:"d/m/Y" }}</li>
-{% endfor %}
-</ul>
-{% else %}
-<p>Nenhuma vaga cadastrada.</p>
-{% endif %}
+      <p><a href="{% url 'vaga_create' %}" style="background-color: #007bff; 
+        color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;">
+        + Criar Nova Vaga</a></p>
+    </div>
+    {% if vagas %}
+      <ul class="list-unstyled small">
+        {% for vaga in vagas %}
+          <li class="border-bottom pb-1 mb-1">
+            <strong>{{ vaga.titulo|truncatechars:35 }}</strong><br>
+            <small class="text-muted">Criada em {{ vaga.created_at|date:"d/m/Y" }}</small>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-muted small">Nenhuma vaga cadastrada.</p>
+    {% endif %}
+  </div>
 
-<h3>Candidatos</h3>
-{% if candidaturas %}
-<table border="1" style="width:100%; border-collapse:collapse; margin:1rem 0;">
-    <thead>
-        <tr>
-            <th>Vaga</th>
-            <th>CPF do PCD</th>
-            <th>Status</th>
-            <th>Ações</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for cand in candidaturas %}
-        <tr>
-            <td>{{ cand.vaga.titulo }}</td>
-            <td>{{ cand.cpf_pcd }}</td>
-            <td>{{ cand.get_status_display }}</td>
-            <td>
+  <!-- Candidatos -->
+  <div class="mt-auto">
+    <h6 class="mb-2">Candidatos</h6>
+    {% if candidaturas %}
+      <div class="table-responsive small" style="max-height: 200px; overflow-y: auto;">
+        <table class="table table-bordered table-sm">
+          <thead class="table-light">
+            <tr>
+              <th>Vaga</th>
+              <th>CPF</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cand in candidaturas %}
+            <tr>
+              <td>{{ cand.vaga.titulo|truncatechars:20 }}</td>
+              <td>{{ cand.cpf_pcd }}</td>
+              <td>{{ cand.get_status_display }}</td>
+              <td>
                 {% if cand.entrevista %}
-                    <a href="{% url 'entrevista' cand.entrevista.id %}">Ver entrevista</a>
+                  <a href="{% url 'entrevista' cand.entrevista.id %}" class="btn btn-sm btn-info">Ver</a>
                 {% else %}
-                    <a href="{% url 'schedule_interview' cand.id %}">Agendar entrevista</a>
+                  <span class="text-muted">Agendar (em breve)</span>
                 {% endif %}
-            </td>
-        </tr>
-    {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<p>Nenhum candidato ainda.</p>
-{% endif %}
-
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted small">Nenhum candidato ainda.</p>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}

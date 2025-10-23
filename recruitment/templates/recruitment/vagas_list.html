@@ -1,25 +1,27 @@
-<!-- templates/recruitment/vagas_list.html -->
 {% extends 'base.html' %}
-{% block title %}Vagas Disponíveis{% endblock %}
+{% block title %}Vagas{% endblock %}
+
 {% block content %}
-<h1>Vagas Disponíveis</h1>
-<p>Todas as vagas estão abertas para pessoas com deficiência (PCD).</p>
+<div class="d-flex flex-column h-100">
+  <h4 class="mb-2">Vagas Disponíveis</h4>
 
-{% if vagas %}
-    <ul>
-    {% for vaga in vagas %}
-        <li>
-            <h3><a href="{% url 'vaga_detail' vaga.id %}">{{ vaga.titulo }}</a></h3>
-            <p>{{ vaga.descricao|truncatewords:20 }}</p>
-            <small>Empresa: {{ vaga.cnpj_empresa }}</small>
-        </li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>Nenhuma vaga disponível no momento.</p>
-{% endif %}
+  {% if vagas %}
+    <div class="list-group list-group-flush small flex-grow-1 overflow-auto mb-2">
+      {% for vaga in vagas %}
+        <a href="{% url 'vaga_detail' vaga.id %}" class="list-group-item list-group-item-action py-2">
+          <strong>{{ vaga.titulo|truncatechars:40 }}</strong><br>
+          <small class="text-muted">{{ vaga.cnpj_empresa }}</small>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted small">Nenhuma vaga.</p>
+  {% endif %}
 
-{% if user.is_authenticated and user.user_type == 'recruiter' %}
-    <p><a href="/recruiter/vagas/new/">+ Criar nova vaga</a></p>
-{% endif %}
+  
+  <div style="margin-top: 20px;">
+        <a href="/pcd/dashboard/" style="background-color: #6c757d; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Voltar ao Dashboard</a>
+    </div>
+
+</div>
 {% endblock %}

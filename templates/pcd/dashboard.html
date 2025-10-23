@@ -1,35 +1,47 @@
-<!-- templates/pcd/dashboard.html -->
 {% extends 'base.html' %}
 {% block title %}Meu Dashboard - PCD{% endblock %}
+
 {% block content %}
-<h1>Olá, {{ user.email }}!</h1>
-<h2>Seu Dashboard (PCD)</h2>
+<h2 class="mb-4">Perfil do Candidato PCD</h2>
+
+<div class="card p-4 mb-4">
+  <h3>Minhas Informações</h3>
+  <p><strong>Email:</strong> {{ user.email }}</p>
+  <p><strong>CPF:</strong> {{ user.pcd_profile.cpf }}</p>
+  <p><strong>Deficiência:</strong> {{ user.pcd_profile.get_disability_display }}</p>
+</div>
 
 {% if proxima_entrevista %}
-<div style="background:#e6f7ff; padding:1rem; margin:1rem 0; border-radius:4px;">
-    <h3>Próxima Entrevista</h3>
-    <p><strong>Vaga:</strong> {{ proxima_entrevista.candidatura.vaga.titulo }}</p>
-    <p><strong>Data:</strong> {{ proxima_entrevista.data_agendada }}</p>
-    {% if proxima_entrevista.link_video %}
-        <a href="{{ proxima_entrevista.link_video }}" target="_blank" class="btn">Entrar na entrevista</a>
-    {% endif %}
+<div class="alert alert-info">
+  <h4>Próxima Entrevista</h4>
+  <p><strong>Vaga:</strong> {{ proxima_entrevista.candidatura.vaga.titulo }}</p>
+  <p><strong>Data:</strong> {{ proxima_entrevista.data_agendada }}</p>
+  {% if proxima_entrevista.link_video %}
+    <a href="{{ proxima_entrevista.link_video }}" target="_blank" class="btn btn-success">Entrar na entrevista</a>
+  {% endif %}
 </div>
 {% endif %}
 
-<h3>Minhas Candidaturas</h3>
+<h3 class="mt-4">Minhas Candidaturas</h3>
 {% if candidaturas %}
-<ul>
-{% for cand in candidaturas %}
-    <li>
-        <strong>{{ cand.vaga.titulo }}</strong> ({{ cand.get_status_display }})
-        {% if cand.entrevista %}
-            — <a href="{% url 'entrevista' cand.entrevista.id %}">Ver entrevista</a>
-        {% endif %}
-    </li>
-{% endfor %}
-</ul>
+  <div class="list-group mb-4">
+    {% for cand in candidaturas %}
+    <div class="list-group-item">
+      <h5>{{ cand.vaga.titulo }}</h5>
+      <p class="mb-1"><strong>Status:</strong> {{ cand.get_status_display }}</p>
+      {% if cand.entrevista %}
+        <a href="{% url 'entrevista' cand.entrevista.id %}" class="btn btn-outline-primary btn-sm">Ver entrevista</a>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
 {% else %}
-<p>Você ainda não se candidatou a nenhuma vaga. <a href="{% url 'vagas_list' %}">Veja as vagas disponíveis</a>.</p>
+  <p class="text-muted">Você ainda não se candidatou a nenhuma vaga.</p>
 {% endif %}
 
+<div class="d-flex gap-2">
+  <a href="{% url 'vagas_list' %}" class="btn btn-primary">Ver vagas disponíveis</a>
+  
+</div>
 {% endblock %}
+<button class="btn btn-secondary" onclick="voltarInicio()">⬅ Voltar ao Início</button>

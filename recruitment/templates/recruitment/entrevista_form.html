@@ -1,26 +1,64 @@
-<!-- templates/recruitment/entrevista_form.html -->
 {% extends 'base.html' %}
-{% block title %}Agendar Entrevista{% endblock %}
-{% block content %}
-<h1>Agendar entrevista</h1>
-<p>Empresa: {{ empresa.nome }} (CNPJ {{ empresa.cnpj }})</p>
-<p>Candidatura: {{ candidatura.vaga.titulo }} — CPF {{ candidatura.cpf_pcd }}</p>
+{% block title %}Entrevista{% endblock %}
 
-<form method="post">
-    {% csrf_token %}
-    <div>
-        <label for="data_agendada">Data e hora</label>
-        <input type="datetime-local" id="data_agendada" name="data_agendada" required>
-    </div>
-    <div>
-        <label for="link_video">Link da sala de vídeo (opcional)</label>
-        <input type="url" id="link_video" name="link_video" placeholder="https://">
-    </div>
-    <div>
-        <label for="observacoes">Observações (opcional)</label>
-        <textarea id="observacoes" name="observacoes" rows="3"></textarea>
-    </div>
-    <button type="submit">Agendar</button>
-    <a href="{% url 'recruiter_dashboard' %}">Cancelar</a>
-</form>
+{% block content %}
+<div class="d-flex flex-column h-100">
+  <h5 class="mb-1">Entrevista</h5>
+  <small class="text-muted mb-2">{{ entrevista.candidatura.vaga.titulo|truncatechars:40 }}</small>
+
+  {% if entrevista.link_video %}
+    <a href="{{ entrevista.link_video }}" target="_blank" class="btn btn-success btn-sm mb-2 w-100">Entrar na sala</a>
+  {% endif %}
+
+  <div id="legendas-container" class="bg-light small p-2 rounded mb-2 text-center flex-grow-1 d-flex align-items-center justify-content-center">
+    <span id="legendas-texto">Legendas em tempo real...</span>
+  </div>
+
+  <div class="d-grid gap-1 mt-auto">
+    <button class="btn btn-warning btn-sm" onclick="simulateTranslation('libras_para_audio')">
+      🖐️ Libras → Áudio
+    </button>
+    <button class="btn btn-info btn-sm" onclick="simulateTranslation('audio_para_libras')">
+      🎤 Áudio → Libras
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function simulateTranslation(tipo) {
+  const legendas = document.getElementById('legendas-texto');
+  legendas.innerHTML = "<em>Processando...</em>";
+
+  let payload, url;
+  if (tipo === 'audio_para_libras') {
+    const texto = prompt("Fale:", "Olá, sou candidato.");
+    if (!texto) return;
+    payload = { texto };
+    url = "/accessibility/translate/audio-to-libras/";
+  } else {
+    payload = { video_url: "mock.mp4" };
+    url = "/accessibility/translate/libras-to-audio/";
+  }
+
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(data => {
+    legendas.innerHTML = data.success 
+      ? (tipo === 'libras_para_audio' ? data.texto_traduzido : `<a href="${data.video_libras_url}">Vídeo em Libras</a>`)
+      : "<span class='text-danger'>Erro</span>";
+  })
+  .catch(() => legendas.innerHTML = "<span class='text-danger'>Falha</span>");
+}
+
+function getCookie(name) {
+  let v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
+}
+</script>
 {% endblock %}
