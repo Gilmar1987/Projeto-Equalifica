@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# Venv local
+.venv/
+venv/
+ENV/
+
+# VCS
+.git/
+.gitignore
+
+# Editor/IDE
+.vscode/
+.DS_Store
+
+# Static build output
+staticfiles/
+
+# Node (se houver)
+node_modules/
+
+# Logs
+*.log

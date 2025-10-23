@@ -1,0 +1,26 @@
+<!-- templates/home.html -->
+{% extends 'base.html' %}
+
+{% block title %}Equalifica - Início{% endblock %}
+
+{% block content %}
+<h1>Bem-vindo ao Equalifica</h1>
+<p>Plataforma inclusiva para pessoas com deficiência (PCD) e empresas comprometidas com a diversidade.</p>
+
+<h2>Acessibilidade em primeiro lugar</h2>
+<ul>
+    <li>Tradução em tempo real: Libras ↔ Áudio</li>
+    <li>Legendas automáticas</li>
+    <li>Compatível com leitores de tela e navegação por teclado</li>
+</ul>
+
+{% if user.is_authenticated %}
+    <p>Você está logado! Redirecione-se ao seu dashboard.</p>
+{% else %}
+    <p>
+        <a href="{% url 'register' %}" class="btn">Cadastre-se como PCD</a> |
+        <a href="{% url 'login' %}" class="btn">Login</a>
+        <a href="{% url 'logout' %}" class="btn">Logout</a>
+    </p>
+{% endif %}
+{% endblock %}

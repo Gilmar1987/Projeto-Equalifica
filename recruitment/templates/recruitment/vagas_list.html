@@ -1,0 +1,25 @@
+<!-- templates/recruitment/vagas_list.html -->
+{% extends 'base.html' %}
+{% block title %}Vagas Disponíveis{% endblock %}
+{% block content %}
+<h1>Vagas Disponíveis</h1>
+<p>Todas as vagas estão abertas para pessoas com deficiência (PCD).</p>
+
+{% if vagas %}
+    <ul>
+    {% for vaga in vagas %}
+        <li>
+            <h3><a href="{% url 'vaga_detail' vaga.id %}">{{ vaga.titulo }}</a></h3>
+            <p>{{ vaga.descricao|truncatewords:20 }}</p>
+            <small>Empresa: {{ vaga.cnpj_empresa }}</small>
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>Nenhuma vaga disponível no momento.</p>
+{% endif %}
+
+{% if user.is_authenticated and user.user_type == 'recruiter' %}
+    <p><a href="/recruiter/vagas/new/">+ Criar nova vaga</a></p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,33 @@
+<!-- templates/accounts/register.html -->
+{% extends 'base.html' %}
+{% block title %}Cadastro (PCD){% endblock %}
+{% block content %}
+<h2>Cadastro para Pessoa com Deficiência (PCD)</h2>
+
+<!-- Exibir erros não relacionados a campos específicos -->
+{% if form.non_field_errors %}
+    <div style="color: red; margin-bottom: 1rem;">
+        {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+        <div>
+            {{ field.label_tag }}
+            {{ field }}
+            {% if field.help_text %}
+                <small class="helptext">{{ field.help_text }}</small>
+            {% endif %}
+            {% for error in field.errors %}
+                <p style="color:red;">{{ error }}</p>
+            {% endfor %}
+        </div>
+    {% endfor %}
+    <button type="submit">Cadastrar</button>
+</form>
+<a href="{% url 'login' %}">Já tenho conta</a>
+{% endblock %}

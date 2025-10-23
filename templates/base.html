@@ -1,0 +1,58 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Equalifica{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <!-- VLibras -->
+    <div vw class="enabled">
+        <div vw-access-button class="active"></div>
+        <div vw-plugin-wrapper>
+            <div class="vw-plugin-top-wrapper"></div>
+        </div>
+    </div>
+    <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+    <script>
+        new window.VLibras.Widget('https://vlibras.gov.br/app');
+    </script>
+</head>
+<body>
+    <header>
+        <h1>Equalifica</h1>
+        {% if user.is_authenticated %}
+            <p>Olá, {{ user.get_full_name|default:user.email }}</p>
+            <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" style="background: none; border: none; color: inherit; text-decoration: underline; cursor: pointer;">Sair</button>
+            </form>
+        {% else %}
+            <a href="{% url 'login' %}">Login</a> |
+            <a href="{% url 'register' %}">Cadastre-se (PCD)</a>
+        {% endif %}
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>© 2025 Equalifica — Plataforma de Inclusão no Trabalho</p>
+        <button id="tts-btn" aria-label="Ler página em voz alta">🔊 Ler página</button>
+    </footer>
+
+    <script>
+        document.getElementById('tts-btn')?.addEventListener('click', () => {
+            if ('speechSynthesis' in window) {
+                const text = document.body.innerText;
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'pt-BR';
+                speechSynthesis.speak(utterance);
+            } else {
+                alert('Seu navegador não suporta leitura de texto em voz alta.');
+            }
+        });
+    </script>
+</body>
+</html>

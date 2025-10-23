@@ -1,0 +1,119 @@
+<!-- templates/recruitment/entrevista.html -->
+{% extends 'base.html' %}
+{% block title %}Detalhes da Entrevista{% endblock %}
+{% block content %}
+<h1>Detalhes da Entrevista</h1>
+
+<div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+    <h3>Informações da Vaga</h3>
+    <p><strong>Título:</strong> {{ candidatura.vaga.titulo }}</p>
+    <p><strong>Empresa:</strong> {{ candidatura.vaga.cnpj_empresa }}</p>
+    
+    <h3>Informações da Candidatura</h3>
+    <p><strong>CPF do Candidato:</strong> {{ candidatura.cpf_pcd }}</p>
+    <p><strong>Status:</strong> {{ candidatura.get_status_display }}</p>
+    <p><strong>Data da Candidatura:</strong> {{ candidatura.created_at|date:"d/m/Y H:i" }}</p>
+    
+    <h3>Detalhes da Entrevista</h3>
+    <p><strong>Data Agendada:</strong> {{ entrevista.data_agendada|date:"d/m/Y H:i" }}</p>
+    {% if entrevista.link_video %}
+        <p><strong>Link da Sala:</strong> <a href="{{ entrevista.link_video }}" target="_blank">{{ entrevista.link_video }}</a></p>
+    {% endif %}
+    {% if entrevista.observacoes %}
+        <p><strong>Observações:</strong> {{ entrevista.observacoes }}</p>
+    {% endif %}
+    <p><strong>Status:</strong> {{ entrevista.get_status_display }}</p>
+    {% if entrevista.feedback %}
+        <p><strong>Feedback:</strong> {{ entrevista.feedback }}</p>
+    {% endif %}
+</div>
+
+{% if user.user_type == 'recruiter' %}
+    <div style="margin-top: 20px;">
+        <a href="{% url 'recruiter_dashboard' %}" style="background-color: #6c757d; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Voltar ao Dashboard</a>
+    </div>
+{% endif %}
+
+{% if user.user_type == 'pcd' %}
+    <div style="margin-top: 20px;">
+        <a href="{% url 'pcd_dashboard' %}" style="background-color: #6c757d; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Voltar ao Dashboard</a>
+    </div>
+{% endif %}
+
+<!-- Recursos de Acessibilidade -->
+<div style="margin-top: 30px; padding: 20px; border: 2px solid #007bff; border-radius: 8px;">
+    <h3>Recursos de Acessibilidade</h3>
+    <p>Use os botões abaixo para tradução durante a entrevista:</p>
+    
+    <button onclick="simulateTranslation('audio_para_libras')" style="background-color: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 4px; margin-right: 10px;">
+        🎤 Áudio para Libras
+    </button>
+    
+    <button onclick="simulateTranslation('libras_para_audio')" style="background-color: #17a2b8; color: white; padding: 10px 15px; border: none; border-radius: 4px;">
+        👋 Libras para Áudio
+    </button>
+    
+    <div id="legendas-texto" style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 4px; min-height: 50px;">
+        <em>As traduções aparecerão aqui...</em>
+    </div>
+</div>
+
+<script>
+function simulateTranslation(tipo) {
+    const legendas = document.getElementById('legendas-texto');
+    legendas.innerHTML = "<em>Processando tradução...</em>";
+
+    let payload;
+    if (tipo === 'audio_para_libras') {
+        const texto = prompt("Digite o que deseja falar (simulação de áudio):", "Olá, meu nome é João.");
+        if (!texto) return;
+        payload = { texto: texto };
+        url = "/accessibility/translate/audio-to-libras/";
+    } else {
+        // Simular upload de vídeo (em MVP, usamos URL fixa)
+        payload = { video_url: "https://exemplo.com/libras-video.mp4" };
+        url = "/accessibility/translate/libras-to-audio/";
+    }
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (tipo === 'libras_para_audio') {
+                legendas.innerHTML = `<strong>Áudio traduzido:</strong> ${data.texto_traduzido}`;
+            } else {
+                legendas.innerHTML = `<strong>Libras geradas:</strong> <a href="${data.video_libras_url}" target="_blank">Assistir vídeo</a>`;
+            }
+        } else {
+            legendas.innerHTML = `<span style="color:red;">Erro: ${data.error || 'Falha na tradução'}</span>`;
+        }
+    })
+    .catch(error => {
+        legendas.innerHTML = `<span style="color:red;">Erro de conexão: ${error.message}</span>`;
+    });
+}
+
+// Helper para obter CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

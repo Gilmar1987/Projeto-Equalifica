@@ -1,0 +1,52 @@
+<!-- templates/recruiter/dashboard.html -->
+{% extends 'base.html' %}
+{% block title %}Dashboard - {{ empresa.nome }}{% endblock %}
+{% block content %}
+<h1>Dashboard da Empresa: {{ empresa.nome }}</h1>
+
+<h3>Vagas Ativas ({{ vagas.count }})</h3>
+<p><a href="{% url 'vaga_create' %}" style="background-color: #007bff; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;">+ Criar Nova Vaga</a></p>
+
+{% if vagas %}
+<ul>
+{% for vaga in vagas %}
+    <li>{{ vaga.titulo }} — Criada em {{ vaga.created_at|date:"d/m/Y" }}</li>
+{% endfor %}
+</ul>
+{% else %}
+<p>Nenhuma vaga cadastrada.</p>
+{% endif %}
+
+<h3>Candidatos</h3>
+{% if candidaturas %}
+<table border="1" style="width:100%; border-collapse:collapse; margin:1rem 0;">
+    <thead>
+        <tr>
+            <th>Vaga</th>
+            <th>CPF do PCD</th>
+            <th>Status</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for cand in candidaturas %}
+        <tr>
+            <td>{{ cand.vaga.titulo }}</td>
+            <td>{{ cand.cpf_pcd }}</td>
+            <td>{{ cand.get_status_display }}</td>
+            <td>
+                {% if cand.entrevista %}
+                    <a href="{% url 'entrevista' cand.entrevista.id %}">Ver entrevista</a>
+                {% else %}
+                    <a href="{% url 'schedule_interview' cand.id %}">Agendar entrevista</a>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Nenhum candidato ainda.</p>
+{% endif %}
+
+{% endblock %}
