@@ -1,0 +1,23 @@
+<!-- recruitment/vagas_recomendadas.html -->
+{% extends 'base.html' %}
+{% block title %}Vagas Recomendadas{% endblock %}
+
+{% block content %}
+<h2>Vagas Recomendadas para Você</h2>
+{% if recomendacoes %}
+  <div class="list-group">
+    {% for vaga, score in recomendacoes %}
+      <a href="{% url 'vaga_detail' vaga.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
+        <div>
+          <h5 class="mb-1">{{ vaga.titulo }}</h5>
+          <p class="mb-1">{{ vaga.descricao|truncatechars:160 }}</p>
+        </div>
+        <span class="badge bg-success align-self-center">{{ score }}%</span>
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="alert alert-warning">Nenhuma vaga recomendada no momento. Atualize suas habilidades para melhorar as recomendações.</div>
+{% endif %}
+<a href="{% url 'pcd_dashboard' %}" class="btn btn-secondary mt-3">Voltar ao Dashboard</a>
+{% endblock %}

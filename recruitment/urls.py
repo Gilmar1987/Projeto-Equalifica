@@ -7,4 +7,8 @@ urlpatterns = [
     path('<int:id>/', views.vaga_detail, name='vaga_detail'),
     path('<int:vaga_id>/candidatar/', views.candidatar, name='candidatar'),
     path('entrevistas/<int:entrevista_id>/', views.entrevista_view, name='entrevista'),
+    
+    #Etapas do Matchmaking
+    path('vagas_recomendadas/', views.vagas_recomendadas, name='vagas_recomendadas'),
+    path('vagas/<int:vaga_id>/candidatos/', views.candidatos_recomendados, name='candidatos_recomendados'),
 ]

@@ -26,3 +26,14 @@ class PCDRegistrationForm(UserCreationForm):
                 lgpd_consent=self.cleaned_data['lgpd_consent']
             )
         return user
+
+# Novo: Formulário de Edição de Perfil PCD (sem CPF)
+class PCDProfileEditForm(forms.ModelForm):
+    lgpd_consent = forms.BooleanField(required=True, label="Concordo com a política de privacidade (LGPD).")
+
+    class Meta:
+        model = PCDProfile
+        fields = ['disability', 'skills', 'lgpd_consent']
+        widgets = {
+            'skills': forms.Textarea(attrs={'rows':4, 'placeholder': 'Ex.: python, comunicação, acessível'}),
+        }

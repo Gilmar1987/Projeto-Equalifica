@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Editar Perfil PCD{% endblock %}
+
+{% block content %}
+<h2>Editar Perfil</h2>
+<p class="text-muted">Seu CPF não pode ser alterado.</p>
+
+<form method="post" class="mt-3">
+  {% csrf_token %}
+  <div class="mb-3">
+    <label class="form-label">CPF</label>
+    <input type="text" class="form-control" value="{{ request.user.pcd_profile.cpf }}" disabled>
+  </div>
+
+  {{ form.non_field_errors }}
+
+  <div class="mb-3">
+    <label class="form-label">Tipo de Deficiência</label>
+    {{ form.disability }}
+    {{ form.disability.errors }}
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Habilidades</label>
+    {{ form.skills }}
+    <div class="form-text">Separe por vírgulas. Ex.: python, comunicação, acessível</div>
+    {{ form.skills.errors }}
+  </div>
+
+  <div class="form-check mb-3">
+    {{ form.lgpd_consent }}
+    <label class="form-check-label" for="id_lgpd_consent">Concordo com a política de privacidade (LGPD)</label>
+    {{ form.lgpd_consent.errors }}
+  </div>
+
+  <button type="submit" class="btn btn-primary">Salvar alterações</button>
+  <a href="{% url 'pcd_dashboard' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

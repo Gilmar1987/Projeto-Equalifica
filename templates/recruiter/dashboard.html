@@ -1,69 +1,38 @@
 {% extends 'base.html' %}
-{% block title %}Dashboard - {{ empresa.nome }}{% endblock %}
+{% block title %}Dashboard do Recrutador{% endblock %}
 
 {% block content %}
-<div class="d-flex flex-column h-100">
-  <h5 class="mb-3">Dashboard da Empresa: <strong>{{ empresa.nome }}</strong></h5>
+<h2 class="mb-4">Bem-vindo, {{ user.first_name }}!</h2>
 
-  <!-- Vagas -->
-  <div class="mb-3">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h6 class="mb-0">Vagas Ativas ({{ vagas.count }})</h6>
-      
+<div class="card p-4 mb-4">
+  <h3>Minha Empresa</h3>
+  {% if empresa %}
+    <p><strong>Nome:</strong> {{ empresa.nome }}</p>
+    <p><strong>Setor:</strong> {{ empresa.get_setor_display }}</p>
+  {% else %}
+    <div class="alert alert-warning">Você ainda não cadastrou sua empresa.</div>
+  {% endif %}
+</div>
 
-      <p><a href="{% url 'vaga_create' %}" style="background-color: #007bff; 
-        color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;">
-        + Criar Nova Vaga</a></p>
-    </div>
-    {% if vagas %}
-      <ul class="list-unstyled small">
-        {% for vaga in vagas %}
-          <li class="border-bottom pb-1 mb-1">
-            <strong>{{ vaga.titulo|truncatechars:35 }}</strong><br>
-            <small class="text-muted">Criada em {{ vaga.created_at|date:"d/m/Y" }}</small>
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="text-muted small">Nenhuma vaga cadastrada.</p>
-    {% endif %}
-  </div>
-
-  <!-- Candidatos -->
-  <div class="mt-auto">
-    <h6 class="mb-2">Candidatos</h6>
-    {% if candidaturas %}
-      <div class="table-responsive small" style="max-height: 200px; overflow-y: auto;">
-        <table class="table table-bordered table-sm">
-          <thead class="table-light">
-            <tr>
-              <th>Vaga</th>
-              <th>CPF</th>
-              <th>Status</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for cand in candidaturas %}
-            <tr>
-              <td>{{ cand.vaga.titulo|truncatechars:20 }}</td>
-              <td>{{ cand.cpf_pcd }}</td>
-              <td>{{ cand.get_status_display }}</td>
-              <td>
-                {% if cand.entrevista %}
-                  <a href="{% url 'entrevista' cand.entrevista.id %}" class="btn btn-sm btn-info">Ver</a>
-                {% else %}
-                  <span class="text-muted">Agendar (em breve)</span>
-                {% endif %}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+<h3 class="mt-4">Minhas Vagas</h3>
+{% if vagas %}
+  <div class="list-group mb-4">
+    {% for vaga in vagas %}
+    <div class="list-group-item">
+      <h5>{{ vaga.titulo }}</h5>
+      <p class="mb-1"><strong>Status:</strong> {{ vaga.get_status_display }}</p>
+      <div class="d-flex gap-2">
+        <a href="{% url 'vaga_detail' vaga.id %}" class="btn btn-outline-primary btn-sm">Ver detalhes</a>
+        <a href="{% url 'candidatos_recomendados' vaga.id %}" class="btn btn-outline-secondary btn-sm">Candidatos recomendados</a>
       </div>
-    {% else %}
-      <p class="text-muted small">Nenhum candidato ainda.</p>
-    {% endif %}
+    </div>
+    {% endfor %}
   </div>
+{% else %}
+  <p class="text-muted">Você ainda não publicou nenhuma vaga.</p>
+{% endif %}
+
+<div class="d-flex gap-2">
+  <a href="{% url 'vaga_create' %}" class="btn btn-primary">Criar nova vaga</a>
 </div>
 {% endblock %}

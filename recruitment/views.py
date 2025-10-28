@@ -8,6 +8,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404
 from .models import Entrevista
 from django.core.exceptions import PermissionDenied
+from .utils import calculate_match_score_from_vectors
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 def vagas_list(request):
     """Lista pública de todas as vagas (PCD vê todas)"""
@@ -89,4 +93,46 @@ def entrevista_view(request, entrevista_id):
     return render(request, 'recruitment/entrevista.html', {
         'entrevista': entrevista,
         'candidatura': candidatura,
+    })
+    
+# Etapas de recomendação Matchmaking  
+@login_required
+def vagas_recomendadas(request):
+    if request.user.user_type != 'pcd':
+        return redirect('home')
+    
+    pcd = request.user.pcd_profile
+    vagas = Vaga.objects.all()
+    recomendacoes = [
+        (vaga, calculate_match_score_from_vectors(vaga, pcd))
+        for vaga in vagas
+    ]
+    recomendacoes = [(v, s) for v, s in recomendacoes if s > 0]
+    recomendacoes.sort(key=lambda x: x[1], reverse=True)
+    
+    return render(request, 'recruitment/vagas_recomendadas.html', {
+        'recomendacoes': recomendacoes[:10]
+    })
+
+@login_required
+def candidatos_recomendados(request, vaga_id):
+    if request.user.user_type != 'recruiter':
+        return redirect('home')
+    
+    vaga = get_object_or_404(Vaga, id=vaga_id, cnpj_empresa=request.user.recruiter_profile.empresa.cnpj)
+    from accounts.models import PCDProfile
+    pcds = PCDProfile.objects.filter(
+        user__is_active=True
+    )
+    
+    recomendacoes = []
+    for pcd in pcds:
+        score = calculate_match_score_from_vectors(vaga, pcd)
+        if score > 0:
+            recomendacoes.append((pcd.user, score))
+    
+    recomendacoes.sort(key=lambda x: x[1], reverse=True)
+    return render(request, 'recruitment/candidatos_recomendados.html', {
+        'vaga': vaga,
+        'recomendacoes': recomendacoes[:10]
     })

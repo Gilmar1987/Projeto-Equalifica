@@ -9,6 +9,9 @@
   <p><strong>Email:</strong> {{ user.email }}</p>
   <p><strong>CPF:</strong> {{ user.pcd_profile.cpf }}</p>
   <p><strong>Deficiência:</strong> {{ user.pcd_profile.get_disability_display }}</p>
+  <div class="mt-2">
+    <a href="{% url 'pcd_profile_edit' %}" class="btn btn-outline-primary btn-sm">Editar meu perfil</a>
+  </div>
 </div>
 
 {% if proxima_entrevista %}
@@ -41,7 +44,7 @@
 
 <div class="d-flex gap-2">
   <a href="{% url 'vagas_list' %}" class="btn btn-primary">Ver vagas disponíveis</a>
-  
+  <a href="{% url 'vagas_recomendadas' %}" class="btn btn-outline-secondary">Ver vagas recomendadas</a>
 </div>
 {% endblock %}
 <button class="btn btn-secondary" onclick="voltarInicio()">⬅ Voltar ao Início</button>

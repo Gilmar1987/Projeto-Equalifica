@@ -4,7 +4,7 @@ from django.db import models
 from django.core.validators import MinLengthValidator
 from common.models import BaseModel
 from common.validators import validate_cpf
-from common.validators import validate_cnpj
+from maching.extractor import extract_features
 
 
 class User(AbstractUser):
@@ -50,10 +50,30 @@ class PCDProfile(BaseModel):
     cpf = models.CharField(max_length=14, unique=True, validators=[validate_cpf, MinLengthValidator(11)],
           help_text="Formato: XXX.XXX.XXX-XX ou XXXXXXXXXXX")
     disability = models.CharField(max_length=20, choices=DISABILITY_CHOICES)
-    skills = models.TextField(help_text="Liste suas habilidades e competências (Separadas por Vírgula).")   
+    skills = models.TextField(blank=True, help_text="Liste suas habilidades e competências (Separadas por Vírgula).")   
     lgpd_consent = models.BooleanField(default=False, help_text="Concordo com a política de privacidade (LGPD).")   
     
-    def __str__(self):
-        return f"PCD: {self.user.email} - {self.get_disability_display()}"
     
-    
+        
+        # Campos para armazenar vetores
+    hard_skills_vetor = models.JSONField(default=list)
+    soft_skills_vetor = models.JSONField(default=list)
+    acessibilidade_vetor = models.JSONField(default=list)
+    experiencia_total = models.IntegerField(default=0)
+
+    def save(self, *args, **kwargs):
+        from maching.extractor import extract_features
+        # Corrigido: usar apenas campos existentes
+        texto = (self.skills or "")
+        attrs = extract_features(texto)
+        
+        self.hard_skills_vetor = list(attrs['hard_skills'])
+        self.soft_skills_vetor = list(attrs['soft_skills'])
+        self.acessibilidade_vetor = list(attrs['acessibilidade'])
+        self.experiencia_total = attrs['experiencia']
+        
+        super().save(*args, **kwargs)
+        def __str__(self):
+            return f"PCD: {self.user.email} - {self.get_disability_display()}"
+        
+        
