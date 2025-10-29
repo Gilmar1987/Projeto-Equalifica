@@ -80,7 +80,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'equalifica_project.wsgi.application'
-ASGI_APPLICATION = 'equalifica_project.asgi.application'
+#ASGI_APPLICATION = 'equalifica_project.asgi.application'
+ASGI_APPLICATION = 'equalifica_project.routing.application'    
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -92,6 +93,12 @@ DATABASES = {
     }
 }
 
+#Modificação para Acessibilidade
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
