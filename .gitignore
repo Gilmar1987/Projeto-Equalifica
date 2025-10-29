@@ -1,0 +1,36 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Django
+db.sqlite3
+media/
+staticfiles/
+
+# Node
+node_modules/
+
+# Tools and binaries
+tools/ffmpeg/
+tools/ffmpeg.zip
+*.exe
+
+# IDE/editor
+.vscode/
+*.code-workspace
+
+# Logs
+*.log
