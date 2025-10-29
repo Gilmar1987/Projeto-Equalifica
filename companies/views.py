@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils.dateparse import parse_datetime
 from recruitment.models import Entrevista
+from accounts.models import PCDProfile
 
 class RecruiterDashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'recruiter/dashboard.html'
@@ -19,14 +20,26 @@ class RecruiterDashboardView(LoginRequiredMixin, TemplateView):
 
         cnpj_empresa = user.recruiter_profile.empresa.cnpj
         vagas = Vaga.objects.filter(cnpj_empresa=cnpj_empresa)
-        candidaturas = Candidatura.objects.filter(
+
+        # Filtro por status e paginação
+        status = self.request.GET.get('status')
+        candidaturas_qs = Candidatura.objects.filter(
             cnpj_empresa=cnpj_empresa
         ).select_related('vaga')
+        if status in dict(Candidatura.STATUS_CHOICES):
+            candidaturas_qs = candidaturas_qs.filter(status=status)
+
+        from django.core.paginator import Paginator
+        paginator = Paginator(candidaturas_qs.order_by('-created_at'), 10)
+        page_number = self.request.GET.get('page')
+        candidaturas_page = paginator.get_page(page_number)
 
         context.update({
             'vagas': vagas,
-            'candidaturas': candidaturas,
+            'candidaturas': candidaturas_page,
             'empresa': user.recruiter_profile.empresa,
+            'filtro_status': status or '',
+            'page_obj': candidaturas_page,
         })
         return context
 
@@ -103,7 +116,74 @@ def schedule_interview(request, candidatura_id):
             messages.success(request, 'Entrevista agendada com sucesso!')
             return redirect('recruiter_dashboard')
 
+    # Perfil PCD para indicadores de acessibilidade
+    pcd_profile = PCDProfile.objects.filter(cpf=candidatura.cpf_pcd).first()
+
     return render(request, 'recruitment/entrevista_form.html', {
         'empresa': empresa,
         'candidatura': candidatura,
+        'pcd_profile': pcd_profile,
     })
+
+
+@login_required
+def edit_interview(request, entrevista_id):
+    if request.user.user_type != 'recruiter':
+        messages.error(request, 'Apenas recrutadores podem editar entrevistas.')
+        return redirect('recruiter_dashboard')
+
+    entrevista = get_object_or_404(
+        Entrevista.objects.select_related('candidatura__vaga'),
+        id=entrevista_id
+    )
+    empresa = request.user.recruiter_profile.empresa
+    if entrevista.candidatura.cnpj_empresa != empresa.cnpj:
+        messages.error(request, 'Você não tem permissão para esta entrevista.')
+        return redirect('recruiter_dashboard')
+
+    if request.method == 'POST':
+        data_agendada_str = request.POST.get('data_agendada')
+        link_video = request.POST.get('link_video', '').strip()
+        observacoes = request.POST.get('observacoes', '').strip()
+
+        data_agendada = parse_datetime(data_agendada_str) if data_agendada_str else None
+        if not data_agendada:
+            messages.error(request, 'Informe a data e hora da entrevista.')
+        else:
+            entrevista.data_agendada = data_agendada
+            entrevista.link_video = link_video
+            entrevista.observacoes = observacoes
+            entrevista.save()
+            messages.success(request, 'Entrevista atualizada com sucesso!')
+            return redirect('entrevista', entrevista_id=entrevista.id)
+
+    return render(request, 'recruitment/entrevista_edit_form.html', {
+        'entrevista': entrevista,
+        'candidatura': entrevista.candidatura,
+    })
+
+
+@login_required
+def cancel_interview(request, entrevista_id):
+    if request.user.user_type != 'recruiter':
+        messages.error(request, 'Apenas recrutadores podem cancelar entrevistas.')
+        return redirect('recruiter_dashboard')
+
+    entrevista = get_object_or_404(
+        Entrevista.objects.select_related('candidatura__vaga'),
+        id=entrevista_id
+    )
+    empresa = request.user.recruiter_profile.empresa
+    if entrevista.candidatura.cnpj_empresa != empresa.cnpj:
+        messages.error(request, 'Você não tem permissão para esta entrevista.')
+        return redirect('recruiter_dashboard')
+
+    if request.method == 'POST':
+        candidatura = entrevista.candidatura
+        entrevista.delete()
+        candidatura.status = 'pendente'
+        candidatura.save(update_fields=['status'])
+        messages.success(request, 'Entrevista cancelada e candidatura retornada para pendente.')
+        return redirect('recruiter_dashboard')
+
+    return redirect('entrevista', entrevista_id=entrevista.id)

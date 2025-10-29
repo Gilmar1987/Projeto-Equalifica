@@ -18,10 +18,18 @@
     <p class="text-muted small">Nenhuma vaga.</p>
   {% endif %}
 
-  
-  <div style="margin-top: 20px;">
-        <a href="/pcd/dashboard/" style="background-color: #6c757d; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Voltar ao Dashboard</a>
+  {% if user.is_authenticated and user.user_type == 'recruiter' %}
+    <div class="mt-3">
+      <a href="{% url 'vaga_create' %}" class="btn btn-primary btn-sm">+ Criar nova vaga</a>
     </div>
+    <div class="mt-2">
+      <a href="{% url 'recruiter_dashboard' %}" class="btn btn-outline-secondary btn-sm">Voltar ao Dashboard</a>
+    </div>
+  {% elif user.is_authenticated and user.user_type == 'pcd' %}
+    <div class="mt-2">
+      <a href="{% url 'pcd_dashboard' %}" class="btn btn-outline-secondary btn-sm">Voltar ao Dashboard</a>
+    </div>
+  {% endif %}
 
 </div>
 {% endblock %}

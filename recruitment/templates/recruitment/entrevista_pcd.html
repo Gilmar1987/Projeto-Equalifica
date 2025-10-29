@@ -1,0 +1,418 @@
+{% extends 'base.html' %}
+
+{% block title %}Entrevista - {{ entrevista.candidatura.vaga.titulo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="fas fa-video"></i> Entrevista - {{ entrevista.candidatura.vaga.titulo }}</h4>
+                    <p class="mb-0">Empresa: {{ entrevista.candidatura.vaga.empresa.nome }}</p>
+                </div>
+                <div class="card-body">
+                    <!-- Status da Conexão -->
+                    <div class="alert alert-info" id="connection-status">
+                        <i class="fas fa-wifi"></i> Conectando à entrevista...
+                    </div>
+
+                    <!-- Informações da Entrevista -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Detalhes da Entrevista</h5>
+                            <p><strong>Data:</strong> {{ entrevista.data_agendada|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Status:</strong> 
+                                <span class="badge badge-{% if entrevista.status == 'agendada' %}warning{% elif entrevista.status == 'realizada' %}success{% else %}secondary{% endif %}">
+                                    {{ entrevista.get_status_display }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Participantes</h5>
+                            <div id="participants-list">
+                                <p><i class="fas fa-user"></i> Você (PCD)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Área de Comunicação -->
+                    <div class="row">
+                        <!-- Mensagens do Recrutador -->
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-comments"></i> Comunicação com o Recrutador</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="messages-container" style="height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; background-color: #f8f9fa;">
+                                        <div class="text-center text-muted">
+                                            <i class="fas fa-headphones"></i>
+                                            <p>Aguardando mensagens do recrutador...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Área de Resposta -->
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h6><i class="fas fa-reply"></i> Sua Resposta</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <textarea id="response-text" class="form-control" rows="3" placeholder="Digite sua resposta aqui..."></textarea>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <button id="send-text-btn" class="btn btn-primary">
+                                            <i class="fas fa-paper-plane"></i> Enviar Texto
+                                        </button>
+                                        <button id="convert-to-audio-btn" class="btn btn-success">
+                                            <i class="fas fa-volume-up"></i> Converter para Áudio
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Painel VLibras -->
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header bg-success text-white">
+                                    <h6><i class="fas fa-hands"></i> Tradução em Libras</h6>
+                                </div>
+                                <div class="card-body text-center">
+                                    <div id="vlibras-content" style="min-height: 200px; background-color: #f0f0f0; border-radius: 8px; padding: 20px;">
+                                        <i class="fas fa-sign-language" style="font-size: 48px; color: #28a745;"></i>
+                                        <p class="mt-3">O VLibras traduzirá automaticamente as mensagens do recrutador</p>
+                                    </div>
+                                    
+                                    <!-- Texto para tradução -->
+                                    <div id="translation-text" style="display: none;">
+                                        <span id="texto-para-libras"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Controles de Acessibilidade -->
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h6><i class="fas fa-universal-access"></i> Acessibilidade</h6>
+                                </div>
+                                <div class="card-body">
+                                    <button id="repeat-last-message" class="btn btn-outline-primary btn-sm btn-block">
+                                        <i class="fas fa-redo"></i> Repetir Última Mensagem
+                                    </button>
+                                    <button id="increase-font" class="btn btn-outline-secondary btn-sm btn-block mt-2">
+                                        <i class="fas fa-search-plus"></i> Aumentar Fonte
+                                    </button>
+                                    <button id="decrease-font" class="btn btn-outline-secondary btn-sm btn-block mt-2">
+                                        <i class="fas fa-search-minus"></i> Diminuir Fonte
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const entrevistaId = {{ entrevista.id }};
+    let socket = null;
+    let lastMessage = '';
+    let fontSize = 16;
+
+    // Conectar WebSocket
+    function connectWebSocket() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/entrevista/${entrevistaId}/`;
+        
+        socket = new WebSocket(wsUrl);
+        
+        socket.onopen = function(e) {
+            console.log('WebSocket conectado');
+            updateConnectionStatus('Conectado à entrevista', 'success');
+        };
+        
+        socket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            handleWebSocketMessage(data);
+        };
+        
+        socket.onclose = function(e) {
+            console.log('WebSocket desconectado');
+            updateConnectionStatus('Desconectado - Tentando reconectar...', 'warning');
+            // Tentar reconectar após 3 segundos
+            setTimeout(connectWebSocket, 3000);
+        };
+        
+        socket.onerror = function(e) {
+            console.error('Erro no WebSocket:', e);
+            updateConnectionStatus('Erro de conexão', 'danger');
+        };
+    }
+
+    // Atualizar status da conexão
+    function updateConnectionStatus(message, type) {
+        const statusEl = document.getElementById('connection-status');
+        statusEl.className = `alert alert-${type}`;
+        statusEl.innerHTML = `<i class="fas fa-wifi"></i> ${message}`;
+    }
+
+    // Lidar com mensagens WebSocket
+    function handleWebSocketMessage(data) {
+        switch(data.type) {
+            case 'user_joined':
+                addParticipant(data);
+                break;
+            case 'audio_transcription':
+                if (data.sender_type === 'recruiter') {
+                    displayRecruiterMessage(data.message, data.timestamp);
+                    translateToLibras(data.message);
+                    lastMessage = data.message;
+                }
+                break;
+            case 'text_response':
+                if (data.sender_type === 'recruiter') {
+                    displayRecruiterMessage(data.message, data.timestamp);
+                }
+                break;
+        }
+    }
+
+    // Adicionar participante à lista
+    function addParticipant(data) {
+        if (data.user_type === 'recruiter') {
+            const participantsList = document.getElementById('participants-list');
+            participantsList.innerHTML += `<p><i class="fas fa-user-tie"></i> ${data.username} (Recrutador)</p>`;
+        }
+    }
+
+    // Exibir mensagem do recrutador
+    function displayRecruiterMessage(message, timestamp) {
+        const container = document.getElementById('messages-container');
+        const messageEl = document.createElement('div');
+        messageEl.className = 'message-bubble recruiter-message mb-3';
+        messageEl.innerHTML = `
+            <div class="d-flex align-items-start">
+                <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 40px; height: 40px;">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <div class="message-content flex-grow-1">
+                    <div class="message-header d-flex justify-content-between align-items-center">
+                        <strong>Recrutador</strong>
+                        <small class="text-muted">${new Date(timestamp).toLocaleTimeString()}</small>
+                    </div>
+                    <div class="message-text bg-light p-3 rounded mt-1" style="font-size: ${fontSize}px;">
+                        ${message}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remover mensagem de "aguardando" se existir
+        const waitingMsg = container.querySelector('.text-center');
+        if (waitingMsg) {
+            waitingMsg.remove();
+        }
+        
+        container.appendChild(messageEl);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    // Traduzir para Libras usando VLibras
+    function translateToLibras(text) {
+        const textoElement = document.getElementById('texto-para-libras');
+        textoElement.textContent = text;
+        
+        // Tentar ativar o VLibras automaticamente
+        setTimeout(() => {
+            try {
+                // Simular clique no botão do VLibras se disponível
+                const vlibrasBtn = document.querySelector('[vw-access-button]');
+                if (vlibrasBtn) {
+                    vlibrasBtn.click();
+                }
+                
+                // Selecionar o texto para tradução
+                const range = document.createRange();
+                range.selectNodeContents(textoElement);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                
+                // Destacar visualmente
+                textoElement.style.backgroundColor = '#ffeb3b';
+                textoElement.style.padding = '10px';
+                textoElement.style.borderRadius = '5px';
+                textoElement.style.display = 'block';
+                
+            } catch (error) {
+                console.log('VLibras não disponível ou erro na ativação:', error);
+            }
+        }, 500);
+    }
+
+    // Enviar resposta em texto
+    function sendTextResponse() {
+        const textArea = document.getElementById('response-text');
+        const message = textArea.value.trim();
+        
+        if (message && socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({
+                type: 'text_response',
+                message: message,
+                timestamp: new Date().toISOString()
+            }));
+            
+            // Limpar textarea
+            textArea.value = '';
+            
+            // Mostrar mensagem enviada
+            displayOwnMessage(message);
+        }
+    }
+
+    // Exibir própria mensagem
+    function displayOwnMessage(message) {
+        const container = document.getElementById('messages-container');
+        const messageEl = document.createElement('div');
+        messageEl.className = 'message-bubble own-message mb-3 text-right';
+        messageEl.innerHTML = `
+            <div class="d-flex align-items-start justify-content-end">
+                <div class="message-content flex-grow-1">
+                    <div class="message-header d-flex justify-content-between align-items-center">
+                        <small class="text-muted">${new Date().toLocaleTimeString()}</small>
+                        <strong>Você</strong>
+                    </div>
+                    <div class="message-text bg-primary text-white p-3 rounded mt-1" style="font-size: ${fontSize}px;">
+                        ${message}
+                    </div>
+                </div>
+                <div class="avatar bg-success text-white rounded-circle d-flex align-items-center justify-content-center ml-3" style="width: 40px; height: 40px;">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(messageEl);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    // Converter texto para áudio
+    function convertToAudio() {
+        const textArea = document.getElementById('response-text');
+        const text = textArea.value.trim();
+        
+        if (text) {
+            // Usar Web Speech API para síntese de voz
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'pt-BR';
+                utterance.rate = 0.8;
+                speechSynthesis.speak(utterance);
+                
+                // Também enviar como texto
+                sendTextResponse();
+            } else {
+                alert('Síntese de voz não suportada neste navegador');
+            }
+        }
+    }
+
+    // Repetir última mensagem
+    function repeatLastMessage() {
+        if (lastMessage) {
+            translateToLibras(lastMessage);
+        }
+    }
+
+    // Controles de fonte
+    function increaseFontSize() {
+        fontSize = Math.min(fontSize + 2, 24);
+        updateFontSize();
+    }
+
+    function decreaseFontSize() {
+        fontSize = Math.max(fontSize - 2, 12);
+        updateFontSize();
+    }
+
+    function updateFontSize() {
+        const messages = document.querySelectorAll('.message-text');
+        messages.forEach(msg => {
+            msg.style.fontSize = fontSize + 'px';
+        });
+    }
+
+    // Event Listeners
+    document.getElementById('send-text-btn').addEventListener('click', sendTextResponse);
+    document.getElementById('convert-to-audio-btn').addEventListener('click', convertToAudio);
+    document.getElementById('repeat-last-message').addEventListener('click', repeatLastMessage);
+    document.getElementById('increase-font').addEventListener('click', increaseFontSize);
+    document.getElementById('decrease-font').addEventListener('click', decreaseFontSize);
+    
+    // Enviar com Enter (Ctrl+Enter para nova linha)
+    document.getElementById('response-text').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.ctrlKey) {
+            e.preventDefault();
+            sendTextResponse();
+        }
+    });
+
+    // Inicializar conexão
+    connectWebSocket();
+});
+</script>
+
+<style>
+.message-bubble {
+    margin-bottom: 15px;
+}
+
+.avatar {
+    min-width: 40px;
+    min-height: 40px;
+}
+
+.message-content {
+    max-width: 70%;
+}
+
+.own-message .message-content {
+    margin-left: auto;
+}
+
+#messages-container {
+    background-image: linear-gradient(45deg, #f8f9fa 25%, transparent 25%), 
+                      linear-gradient(-45deg, #f8f9fa 25%, transparent 25%), 
+                      linear-gradient(45deg, transparent 75%, #f8f9fa 75%), 
+                      linear-gradient(-45deg, transparent 75%, #f8f9fa 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+#vlibras-content {
+    border: 2px dashed #28a745;
+    transition: all 0.3s ease;
+}
+
+#vlibras-content:hover {
+    background-color: #e8f5e8;
+}
+
+.card-header {
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .message-content {
+        max-width: 85%;
+    }
+}
+</style>
+{% endblock %}

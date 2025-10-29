@@ -23,9 +23,21 @@
 
   <div class="mt-auto">
     <a href="{% url 'vagas_list' %}" class="btn btn-outline-secondary w-100">← Vagas</a>
-    <div style="margin-top: 20px;">
-        <a href="/pcd/dashboard/" style="background-color: #6c757d; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Voltar ao Dashboard</a>
-    </div>
+    {% if user.is_authenticated and user.user_type == 'recruiter' %}
+      <div class="mt-2">
+        <a href="{% url 'recruiter_dashboard' %}" class="btn btn-outline-secondary w-100">Voltar ao Dashboard</a>
+      </div>
+      {% if request.GET.from == 'schedule' and request.GET.cand_id %}
+        <div class="mt-2">
+          <a href="{% url 'schedule_interview' request.GET.cand_id %}" class="btn btn-primary w-100">Voltar para Agendar Entrevista</a>
+        </div>
+      {% endif %}
+    {% elif user.is_authenticated and user.user_type == 'pcd' %}
+      <div class="mt-2">
+        <a href="{% url 'pcd_dashboard' %}" class="btn btn-outline-secondary w-100">Voltar ao Dashboard</a>
+        
+      </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

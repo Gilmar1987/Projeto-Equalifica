@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Editar Entrevista{% endblock %}
+
+{% block content %}
+<h2 class="mb-3">Editar Entrevista</h2>
+<p class="text-muted">Vaga: <strong>{{ candidatura.vaga.titulo }}</strong> (Empresa: {{ candidatura.vaga.cnpj_empresa }})</p>
+
+<div class="mb-3">
+  <a href="{% url 'recruiter_dashboard' %}" class="btn btn-secondary">Voltar ao Dashboard</a>
+  <a href="{% url 'entrevista' entrevista.id %}" class="btn btn-outline-secondary">Ver detalhes</a>
+</div>
+
+<form method="post" class="card p-3">
+  {% csrf_token %}
+  <div class="mb-3">
+    <label for="id_data_agendada" class="form-label">Data e Hora</label>
+    <input type="datetime-local" id="id_data_agendada" name="data_agendada" class="form-control" value="{{ entrevista.data_agendada|date:'Y-m-d\TH:i' }}" required>
+  </div>
+  <div class="mb-3">
+    <label for="id_link_video" class="form-label">Link da Entrevista</label>
+    <input type="url" id="id_link_video" name="link_video" class="form-control" value="{{ entrevista.link_video }}" />
+  </div>
+  <div class="mb-3">
+    <label for="id_observacoes" class="form-label">Observações</label>
+    <textarea id="id_observacoes" name="observacoes" rows="3" class="form-control">{{ entrevista.observacoes }}</textarea>
+  </div>
+  <button type="submit" class="btn btn-primary">Salvar alterações</button>
+</form>
+
+<div class="mt-3">
+  <form method="post" action="{% url 'cancel_interview' entrevista.id %}" onsubmit="return confirm('Cancelar a entrevista?');">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-outline-danger">Cancelar Entrevista</button>
+  </form>
+  <small class="text-muted d-block mt-2">Ao cancelar, a candidatura retorna ao status 'Pendente'.</small>
+</div>
+{% endblock %}

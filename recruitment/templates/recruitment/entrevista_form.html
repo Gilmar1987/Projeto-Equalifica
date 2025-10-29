@@ -1,64 +1,68 @@
 {% extends 'base.html' %}
-{% block title %}Entrevista{% endblock %}
+{% block title %}Agendar Entrevista{% endblock %}
 
 {% block content %}
-<div class="d-flex flex-column h-100">
-  <h5 class="mb-1">Entrevista</h5>
-  <small class="text-muted mb-2">{{ entrevista.candidatura.vaga.titulo|truncatechars:40 }}</small>
+<h2 class="mb-3">Agendar Entrevista</h2>
+<p class="text-muted">Vaga: <strong>{{ candidatura.vaga.titulo }}</strong> (Empresa: {{ candidatura.vaga.cnpj_empresa }})</p>
 
-  {% if entrevista.link_video %}
-    <a href="{{ entrevista.link_video }}" target="_blank" class="btn btn-success btn-sm mb-2 w-100">Entrar na sala</a>
-  {% endif %}
+<div class="mb-3">
+  <a href="{% url 'recruiter_dashboard' %}" class="btn btn-secondary">Voltar ao Dashboard</a>
+  <a href="{% url 'vaga_detail' candidatura.vaga.id %}?from=schedule&cand_id={{ candidatura.id }}" class="btn btn-outline-secondary">Ver detalhes da vaga</a>
+</div>
 
-  <div id="legendas-container" class="bg-light small p-2 rounded mb-2 text-center flex-grow-1 d-flex align-items-center justify-content-center">
-    <span id="legendas-texto">Legendas em tempo real...</span>
+<form method="post" class="card p-3">
+  {% csrf_token %}
+  <div class="mb-3">
+    <label for="id_data_agendada" class="form-label">Data e Hora</label>
+    <input type="datetime-local" id="id_data_agendada" name="data_agendada" class="form-control" required>
+    <small class="form-text text-muted">Selecione a data e hora da entrevista.</small>
   </div>
+  <div class="mb-3">
+    <label for="id_link_video" class="form-label">Link da Entrevista</label>
+    <input type="url" id="id_link_video" name="link_video" class="form-control" placeholder="https://meet.google.com/xyz-123" />
+    <small class="form-text text-muted">Opcional — Zoom, Meet, etc.</small>
+  </div>
+  <div class="mb-3">
+    <label for="id_observacoes" class="form-label">Observações</label>
+    <textarea id="id_observacoes" name="observacoes" rows="3" class="form-control" placeholder="Pontos a abordar, orientações de acessibilidade, etc."></textarea>
+  </div>
+  <button type="submit" class="btn btn-primary">Agendar</button>
+</form>
 
-  <div class="d-grid gap-1 mt-auto">
-    <button class="btn btn-warning btn-sm" onclick="simulateTranslation('libras_para_audio')">
-      🖐️ Libras → Áudio
-    </button>
-    <button class="btn btn-info btn-sm" onclick="simulateTranslation('audio_para_libras')">
-      🎤 Áudio → Libras
-    </button>
+<div class="card mt-4">
+  <div class="card-header">Indicadores de Acessibilidade</div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <h6>Vaga</h6>
+        {% if candidatura.vaga.acessibilidade %}
+          <ul class="list-unstyled">
+            {% for k, v in candidatura.vaga.acessibilidade.items %}
+              {% if v %}<li><span class="badge bg-info text-dark">{{ k }}</span></li>{% endif %}
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted">Sem requisitos específicos de acessibilidade.</p>
+        {% endif %}
+      </div>
+      <div class="col-md-6">
+        <h6>Candidato PCD</h6>
+        {% if pcd_profile %}
+          <p><strong>Deficiência:</strong> {{ pcd_profile.get_disability_display }}</p>
+          {% if pcd_profile.acessibilidade_vetor %}
+            <ul class="list-inline">
+              {% for tag in pcd_profile.acessibilidade_vetor %}
+                <li class="list-inline-item"><span class="badge bg-secondary">{{ tag }}</span></li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted">Sem preferências registradas.</p>
+          {% endif %}
+        {% else %}
+          <p class="text-muted">Perfil do candidato não encontrado.</p>
+        {% endif %}
+      </div>
+    </div>
   </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-function simulateTranslation(tipo) {
-  const legendas = document.getElementById('legendas-texto');
-  legendas.innerHTML = "<em>Processando...</em>";
-
-  let payload, url;
-  if (tipo === 'audio_para_libras') {
-    const texto = prompt("Fale:", "Olá, sou candidato.");
-    if (!texto) return;
-    payload = { texto };
-    url = "/accessibility/translate/audio-to-libras/";
-  } else {
-    payload = { video_url: "mock.mp4" };
-    url = "/accessibility/translate/libras-to-audio/";
-  }
-
-  fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-    body: JSON.stringify(payload)
-  })
-  .then(r => r.json())
-  .then(data => {
-    legendas.innerHTML = data.success 
-      ? (tipo === 'libras_para_audio' ? data.texto_traduzido : `<a href="${data.video_libras_url}">Vídeo em Libras</a>`)
-      : "<span class='text-danger'>Erro</span>";
-  })
-  .catch(() => legendas.innerHTML = "<span class='text-danger'>Falha</span>");
-}
-
-function getCookie(name) {
-  let v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
-  return v ? v.pop() : '';
-}
-</script>
 {% endblock %}

@@ -14,13 +14,35 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 def vagas_list(request):
-    """Lista pública de todas as vagas (PCD vê todas)"""
+    """Lista de vagas.
+    - PCDs e visitantes veem todas as vagas.
+    - Recrutadores veem apenas vagas da sua empresa (isolamento por CNPJ).
+    """
     vagas = Vaga.objects.all()
+    user = request.user
+    if user.is_authenticated and getattr(user, 'user_type', None) == 'recruiter':
+        try:
+            cnpj = user.recruiter_profile.empresa.cnpj
+            vagas = vagas.filter(cnpj_empresa=cnpj)
+        except Exception:
+            # Sem empresa vinculada ao perfil do recrutador: não mostrar vagas
+            vagas = Vaga.objects.none()
     return render(request, 'recruitment/vagas_list.html', {'vagas': vagas})
 
 def vaga_detail(request, id):
-    """Detalhe público de uma vaga"""
+    """Detalhe de uma vaga.
+    - Público para PCDs e visitantes.
+    - Recrutadores só podem ver vagas da sua empresa (isolamento por CNPJ).
+    """
     vaga = get_object_or_404(Vaga, id=id)
+    # Se for recrutador, aplicar isolamento por CNPJ
+    if request.user.is_authenticated and getattr(request.user, 'user_type', None) == 'recruiter':
+        try:
+            cnpj = request.user.recruiter_profile.empresa.cnpj
+            if vaga.cnpj_empresa != cnpj:
+                raise PermissionDenied("Você não tem acesso ao detalhe desta vaga.")
+        except Exception:
+            raise PermissionDenied("Perfil de recrutador sem empresa vinculada.")
     ja_candidatado = False
     tem_perfil_pcd = False
     
@@ -71,7 +93,7 @@ def candidatar(request, vaga_id):
 
     return redirect('vaga_detail', id=vaga_id)
 
-login_required
+@login_required
 def entrevista_view(request, entrevista_id):
     entrevista = get_object_or_404(
         Entrevista.objects.select_related('candidatura__vaga'),

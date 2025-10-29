@@ -7,6 +7,7 @@ from companies.views import RecruiterDashboardView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('admin/', include('equalifica_project.urls_admin')),  # URLs para recuperação de senha do Admin
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
     path('accounts/', include('accounts.urls')), 
     

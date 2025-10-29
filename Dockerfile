@@ -7,9 +7,23 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Instalar dependências do sistema mínimas
+# Instalar dependências do sistema necessárias
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    libpq-dev \
+    gcc \
+    g++ \
+    libjpeg-dev \
+    zlib1g-dev \
+    libfreetype6-dev \
+    liblcms2-dev \
+    libopenjp2-7-dev \
+    libtiff5-dev \
+    tk-dev \
+    tcl-dev \
+    libharfbuzz-dev \
+    libfribidi-dev \
+    libxcb1-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar e instalar requirements
@@ -18,6 +32,9 @@ RUN pip install --upgrade pip && pip install -r /app/requirements.txt
 
 # Copiar código
 COPY . /app
+
+# Criar diretório para arquivos estáticos
+RUN mkdir -p /app/staticfiles
 
 EXPOSE 8000
 
