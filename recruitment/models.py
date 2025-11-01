@@ -1,4 +1,5 @@
 # recruitment/models.py
+from datetime import timedelta
 from django.db import models
 from common.models import BaseModel
 from maching.extractor import extract_features
@@ -64,8 +65,37 @@ class Candidatura(BaseModel):
 class Entrevista(BaseModel):
     candidatura = models.OneToOneField(Candidatura, on_delete=models.CASCADE, related_name='entrevista')
     data_agendada = models.DateTimeField()
-    link_video = models.URLField(blank=True, help_text="Link para sala de vídeo (ex: Zoom, Google Meet)")
+    link_video = models.URLField(null=True, blank=True, help_text="Link para sala de vídeo (ex: Zoom, Google Meet)")
     observacoes = models.TextField(blank=True)
+    
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        if is_new:
+            # Agendar notificações
+            from django.utils import timezone
+            from celery import current_app
+            
+            # Notificação 15 minutos antes
+            current_app.send_task(
+                'recruitment.tasks.enviar_notificacoes_entrevista',
+                args=[self.id],
+                eta=self.data_agendada - timedelta(minutes=15)
+            )
+            
+            # Notificação 10 minutos antes
+            current_app.send_task(
+                'recruitment.tasks.enviar_notificacoes_entrevista',
+                args=[self.id],
+                eta=self.data_agendada - timedelta(minutes=10)
+            )
+            
+            # Notificação 5 minutos antes
+            current_app.send_task(
+                'recruitment.tasks.enviar_notificacoes_entrevista',
+                args=[self.id],
+                eta=self.data_agendada - timedelta(minutes=5)
+            )
 
     def __str__(self):
         return f"Entrevista para {self.candidatura.vaga.titulo} - {self.candidatura.cpf_pcd}"

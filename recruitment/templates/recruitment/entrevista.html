@@ -18,13 +18,10 @@
     <p><strong>Data Agendada:</strong> {{ entrevista.data_agendada|date:"d/m/Y H:i" }}</p>
     {% if entrevista.link_video %}
         <p><strong>Link da Sala:</strong> <a href="{{ entrevista.link_video }}" target="_blank">{{ entrevista.link_video }}</a></p>
+        <p><em>Recomendamos usar o link acima para a entrevista em vídeo (Google Meet, Zoom, etc.).</em></p>
     {% endif %}
     {% if entrevista.observacoes %}
         <p><strong>Observações:</strong> {{ entrevista.observacoes }}</p>
-    {% endif %}
-    <p><strong>Status:</strong> {{ entrevista.get_status_display }}</p>
-    {% if entrevista.feedback %}
-        <p><strong>Feedback:</strong> {{ entrevista.feedback }}</p>
     {% endif %}
 </div>
 
@@ -43,77 +40,50 @@
 <!-- Recursos de Acessibilidade -->
 <div style="margin-top: 30px; padding: 20px; border: 2px solid #007bff; border-radius: 8px;">
     <h3>Recursos de Acessibilidade</h3>
-    <p>Use os botões abaixo para tradução durante a entrevista:</p>
+    <p>Use o botão abaixo para transcrever sua fala e traduzir automaticamente para Libras:</p>
     
-    <button onclick="simulateTranslation('audio_para_libras')" style="background-color: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 4px; margin-right: 10px;">
-        🎤 Áudio para Libras
+    <!-- Botão único: Áudio → Libras (funcional) -->
+    <button id="btn-gravar-audio" 
+            onclick="gravarAudioParaLibras()"
+            style="background-color: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 4px;">
+        🎤 Gravar Áudio (10s) → Traduzir para Libras
     </button>
     
-    <button onclick="simulateTranslation('libras_para_audio')" style="background-color: #17a2b8; color: white; padding: 10px 15px; border: none; border-radius: 4px;">
-        👋 Libras para Áudio
-    </button>
-    
-    <div id="legendas-texto" style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 4px; min-height: 50px;">
-        <em>As traduções aparecerão aqui...</em>
+    <!-- Área de legendas + VLibras -->
+    <div id="legendas-texto" style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 4px; min-height: 60px;">
+        <em>A tradução em Libras aparecerá automaticamente após a gravação.</em>
     </div>
+    
+    <!-- Container invisível para o VLibras injetar o avatar -->
+    <div id="vlibras-dinamico" style="display: none;"></div>
 </div>
 
+<script src="/static/js/audio_recorder.js"></script>
 <script>
-function simulateTranslation(tipo) {
-    const legendas = document.getElementById('legendas-texto');
-    legendas.innerHTML = "<em>Processando tradução...</em>";
+function gravarAudioParaLibras() {
+    // Desativa o botão durante a gravação
+    const btn = document.getElementById('btn-gravar-audio');
+    btn.disabled = true;
+    btn.textContent = "Gravando... (10s)";
 
-    let payload;
-    if (tipo === 'audio_para_libras') {
-        const texto = prompt("Digite o que deseja falar (simulação de áudio):", "Olá, meu nome é João.");
-        if (!texto) return;
-        payload = { texto: texto };
-        url = "/accessibility/translate/audio-to-libras/";
-    } else {
-        // Simular upload de vídeo (em MVP, usamos URL fixa)
-        payload = { video_url: "https://exemplo.com/libras-video.mp4" };
-        url = "/accessibility/translate/libras-to-audio/";
-    }
+    gravarAudio((textoTranscrito) => {
+        const legendas = document.getElementById('legendas-texto');
+        legendas.innerHTML = `<strong>Você disse:</strong> ${textoTranscrito}`;
 
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify(payload)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (tipo === 'libras_para_audio') {
-                legendas.innerHTML = `<strong>Áudio traduzido:</strong> ${data.texto_traduzido}`;
-            } else {
-                legendas.innerHTML = `<strong>Libras geradas:</strong> <a href="${data.video_libras_url}" target="_blank">Assistir vídeo</a>`;
-            }
-        } else {
-            legendas.innerHTML = `<span style="color:red;">Erro: ${data.error || 'Falha na tradução'}</span>`;
+        // Injetar texto no DOM para o VLibras traduzir
+        const vlibrasDiv = document.getElementById('vlibras-dinamico');
+        vlibrasDiv.textContent = textoTranscrito;
+        vlibrasDiv.style.display = 'block';
+
+        // Disparar tradução do VLibras
+        if (window.VLibras && window.VLibrasWidget) {
+            window.VLibrasWidget.parseElement(vlibrasDiv);
         }
-    })
-    .catch(error => {
-        legendas.innerHTML = `<span style="color:red;">Erro de conexão: ${error.message}</span>`;
+
+        // Reativa botão
+        btn.disabled = false;
+        btn.textContent = "🎤 Gravar Áudio (10s) → Traduzir para Libras";
     });
-}
-
-// Helper para obter CSRF token
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
 }
 </script>
 {% endblock %}
